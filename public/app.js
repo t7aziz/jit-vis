@@ -1,40 +1,76 @@
 // public/app.js
 
-// A simplified parser for the V8 log file
-function parseV8Log(logData) {
+/**
+ * Parses the plain text V8 log file using regular expressions.
+ * It looks for actions (marking, compiling) and function names.
+ * @param {string} rawLogText - The raw text content from turbo.json.
+ * @returns {{nodes: Array, edges: Array}} - Data formatted for vis-network.
+ */
+function parseV8Log(rawLogText) {
     const nodes = [];
     const edges = [];
+    const nodeMap = new Map(); // Tracks nodes to avoid duplicates { functionName: nodeId }
+    let lastNodeId = null;
     let idCounter = 1;
-    const nodeMap = new Map(); // To track nodes by name and avoid duplicates
 
-    // Find the 'source_code' and 'phases' for a function
-    const functionOptimization = logData.find(entry => entry.name === 'optimizing' && entry.phases);
+    const lines = rawLogText.trim().split('\n');
 
-    if (!functionOptimization) {
-        console.error("Could not find an optimized function with phases in the log.");
-        return { nodes: [{ id: 1, label: 'No Data' }], edges: [] };
-    }
+    // Regex to capture the action (e.g., "marking") and function name (e.g., "runTest")
+    const lineRegex = /\[(\w+)\s.*?<JSFunction\s(\w+)/;
 
-    // Process each phase as a node
-    functionOptimization.phases.forEach((phase, index) => {
-        const node = {
-            id: idCounter++,
-            label: `${phase.name}\n(${phase.type})`,
-            title: `Phase: ${phase.name}`
-        };
-        nodes.push(node);
-        nodeMap.set(phase.name, node.id);
+    lines.forEach(line => {
+        const match = line.match(lineRegex);
+        if (!match) return; // Skip lines that don't match our pattern
 
-        // Create an edge from the previous phase to this one
-        if (index > 0) {
-            const prevPhase = functionOptimization.phases[index - 1];
+        const action = match[1]; // e.g., "marking"
+        const functionName = match[2]; // e.g., "runTest"
+
+        // Create a unique node for each function if it doesn't exist
+        if (!nodeMap.has(functionName)) {
+            nodeMap.set(functionName, idCounter);
+            nodes.push({
+                id: idCounter,
+                label: `Function:\n${functionName}`,
+                color: '#97C2FC', // Blue for functions
+                shape: 'box'
+            });
+            idCounter++;
+        }
+
+        // Create a node for the specific event/action
+        const eventNodeId = idCounter++;
+        const reasonMatch = line.match(/reason:\s(.*?)]/);
+        const reason = reasonMatch ? `\nReason: ${reasonMatch[1]}` : '';
+
+        nodes.push({
+            id: eventNodeId,
+            label: `${action}${reason}`,
+            color: '#FFFF00' // Yellow for events
+        });
+
+        // Create an edge from the function to its event
+        edges.push({
+            from: nodeMap.get(functionName),
+            to: eventNodeId,
+            arrows: 'to'
+        });
+
+        // Create an edge from the previous event to this one to show sequence
+        if (lastNodeId) {
             edges.push({
-                from: nodeMap.get(prevPhase.name),
-                to: node.id,
-                arrows: 'to'
+                from: lastNodeId,
+                to: eventNodeId,
+                arrows: 'to',
+                dashes: true, // Dashed line for chronological flow
+                color: { color: '#cccccc' }
             });
         }
+        lastNodeId = eventNodeId;
     });
+
+    if (nodes.length === 0) {
+        return { nodes: [{ id: 1, label: 'No optimizable functions found in log.' }], edges: [] };
+    }
 
     return { nodes, edges };
 }
@@ -45,23 +81,25 @@ async function main() {
         const response = await fetch('/api/data');
         const rawData = await response.text();
 
-        // The V8 log is a stream of JSONs
-        const logArray = JSON.parse(`[${rawData.trim().replace(/,\s*$/, "")}]`);
+        // Display the raw data in the document
+        const rawDataDisplay = document.createElement('pre');
+        rawDataDisplay.textContent = rawData;
+        document.body.insertBefore(rawDataDisplay, document.getElementById('graph-container'));
 
-        const graphData = parseV8Log(logArray);
+        const graphData = parseV8Log(rawData);
 
         const container = document.getElementById('graph-container');
         const options = {
             layout: {
-                hierarchical: {
-                    direction: 'UD', // Up-Down
-                    sortMethod: 'directed'
-                }
+                hierarchical: false // Hierarchical can be messy; let physics handle it
             },
             edges: {
                 smooth: true
             },
-            physics: false
+            physics: {
+                enabled: true,
+                solver: 'repulsion' // A good physics model for this kind of graph
+            }
         };
 
         new vis.Network(container, graphData, options);
