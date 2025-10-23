@@ -12,7 +12,7 @@ program
     .argument('<file>', 'The JavaScript file to profile.')
     .action((file) => {
         const logFile = 'turbo.json';
-        const nodeCommand = `node --trace-opt --redirect-code-traces --redirect-code-traces-to=${logFile} ${file}`;
+        const nodeCommand = `node --trace-opt --trace-deopt --redirect-code-traces --redirect-code-traces-to=${logFile} ${file}`;
 
         console.log(`Generating V8 logs for "${file}"...`);
 
