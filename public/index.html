@@ -10,21 +10,42 @@
         html {
             font-family: sans-serif;
             margin: 0;
-            padding: 0;
+            padding: 1%;
             height: 100%;
         }
 
         #graph-container {
             width: 100%;
-            height: 100vh;
+            height: 60vh;
             border: 1px solid lightgray;
+        }
+
+        #raw-data {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 8px;
+            box-sizing: border-box;
+            overflow: auto;
+            white-space: pre-wrap;
+            background: #fafafa;
+            border: 1px solid #e0e0e0;
         }
     </style>
 </head>
 
 <body>
-    <h1>V8 Optimization Graph</h1>
-    <div id="graph-container"></div>
+    <h1>V8 Optimization Visualizer</h1>
+
+    <section aria-labelledby="graph-heading">
+        <h2 id="graph-heading">Optimization Graph</h2>
+        <div id="graph-container" role="img" aria-label="V8 optimization graph"></div>
+    </section>
+
+    <section aria-labelledby="raw-heading">
+        <h2 id="raw-heading">Raw V8 Log</h2>
+        <pre id="raw-data">Loading raw log…</pre>
+    </section>
     <script src="app.js"></script>
 </body>
 

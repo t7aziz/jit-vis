@@ -127,10 +127,10 @@ async function main() {
         const response = await fetch('/api/data');
         const rawData = await response.text();
 
-        // Display the raw data in the document
-        const rawDataDisplay = document.createElement('pre');
-        rawDataDisplay.textContent = rawData;
-        document.body.insertBefore(rawDataDisplay, document.getElementById('graph-container'));
+        const rawPre = document.getElementById('raw-data');
+        if (rawPre) {
+            rawPre.textContent = rawData;
+        }
 
         const graphData = parseV8Log(rawData);
 
