@@ -1,6 +1,8 @@
+let network = null;
+
 /**
- * Parses the plain text V8 log file with improved regex and graph logic.
- * @param {string} rawLogText - The raw text content from turbo.json.
+ * Parses the plain text V8 log file with regex and graph logic.
+ * @param {string} rawLogText - The raw text content from realtime-turbo.log.
  * @returns {{nodes: Array, edges: Array}} - Data formatted for vis-network.
  */
 function parseV8Log(rawLogText) {
@@ -121,36 +123,47 @@ function parseV8Log(rawLogText) {
     return { nodes, edges };
 }
 
-// Main function to fetch data and render the graph
-async function main() {
+async function updateGraph() {
     try {
-        const response = await fetch('/api/data');
-        const rawData = await response.text();
+        let response = await fetch('/api/data');
+        let rawData = await response.text();
 
-        const rawPre = document.getElementById('raw-data');
+        let rawPre = document.getElementById('raw-data');
         if (rawPre) {
             rawPre.textContent = rawData;
         }
 
-        const graphData = parseV8Log(rawData);
+        if (network) {
+            network.destroy();
+        }
+
+        let graphData = parseV8Log(rawData);
+
         const container = document.getElementById('graph-container');
         const options = {
             nodes: {
                 shape: 'box',
                 shapeProperties: { borderRadius: 4 },
-                widthConstraint: { minimum: 150, maximum: 150 }, // Set fixed width
+                widthConstraint: { minimum: 150, maximum: 150 },
                 font: { multi: 'html', size: 18, align: 'left' },
             },
             physics: false,
         };
 
-        new vis.Network(container, graphData, options);
+        network = new vis.Network(container, graphData, options);
 
     } catch (error) {
-        console.error('Failed to load or render graph:', error);
-        const container = document.getElementById('graph-container');
-        container.innerText = 'Error loading visualization data. Check the console.';
+        console.error('Failed to update graph:', error);
     }
+}
+
+// Main function to start the polling.
+async function main() {
+    // Perform the first update immediately.
+    await updateGraph();
+
+    // Set an interval to call updateGraph every 2 seconds (2000 milliseconds).
+    setInterval(updateGraph, 100);
 }
 
 main();
