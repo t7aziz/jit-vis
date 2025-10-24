@@ -1,5 +1,3 @@
-// public/app.js
-
 /**
  * Parses the plain text V8 log file with improved regex and graph logic.
  * @param {string} rawLogText - The raw text content from turbo.json.
@@ -9,7 +7,6 @@ function parseV8Log(rawLogText) {
     const nodes = [];
     const edges = [];
 
-    // --- State for layout control ---
     const nodeMap = new Map(); // { functionName: nodeId }
     const lastEventPerFunction = new Map(); // { functionName: lastEventNodeId }
     const functionLayoutInfo = new Map(); // { functionName: { y, nextX } }
@@ -18,35 +15,20 @@ function parseV8Log(rawLogText) {
     let nextFunctionY = 0; // Vertical position for the next function's row
 
     const lines = rawLogText.trim().split('\n');
-
-    // CRITICAL FIX: Capture the entire content inside the outer brackets (1).
     const lineRegex = /^\[(.*?)]$/;
 
     lines.forEach(line => {
         const fullMatch = line.match(lineRegex);
         if (!fullMatch) return;
 
-        const fullLogContent = fullMatch[1].trim();
-
-        // 1. ROBUST FUNCTION NAME EXTRACTION
-        // Captures the function name or description (including anonymous or spaces) 
-        // that appears between <JSFunction and the following ' (' block.
-        const functionNameMatch = fullLogContent.match(/<JSFunction\s(.*?)\s\(/);
-
-        // **FIX:** If no function name is found, use a fallback name instead of skipping the line.
+        const logEntryText = fullMatch[1].trim();
+        const functionNameMatch = logEntryText.match(/<JSFunction\s(.*?)\s\(/);
         const functionName = functionNameMatch ? functionNameMatch[1].trim() : 'Global/Unknown';
-
-        // 2. ISOLATE ACTION DETAILS
-        // Get everything BEFORE the function pointer for clean action parsing.
-        const functionPointerIndex = fullLogContent.indexOf('<JSFunction');
-        const rawActionDetail = (functionPointerIndex !== -1)
-            ? fullLogContent.substring(0, functionPointerIndex).trim()
-            : fullLogContent; // Fallback
 
         let functionNodeId;
         let layout;
 
-        // --- Function Node and Layout Initialization ---
+        // Function block creation
         if (!nodeMap.has(functionName)) {
             functionNodeId = idCounter++;
             nodeMap.set(functionName, functionNodeId);
@@ -70,46 +52,43 @@ function parseV8Log(rawLogText) {
             layout = functionLayoutInfo.get(functionName);
         }
 
-        // --- Event Node Creation and Detail Extraction ---
+        // Event Node Creation
         const eventNodeId = idCounter++;
-        let nodeColor = '#FFFF00'; // Default yellow
-        let action = rawActionDetail; // Fallback
+        let nodeColor = '#FFFF00';
+        let action = logEntryText.substring(0, 40) + '...'; // Fallback display (truncated raw log)
 
-        // 1. Bailout/Deoptimization (Extract Reason)
-        if (rawActionDetail.startsWith('bailout')) {
-            // Extracts reason from patterns like 'reason: X):' or 'reason: X]'
-            const reasonMatch = rawActionDetail.match(/reason:\s(.*?)[\]\)]:/);
+        // Bailout/Deoptimization (Extract Reason)
+        if (logEntryText.startsWith('bailout')) {
+            const reasonMatch = logEntryText.match(/reason:\s(.*?)[\]\)]:/);
             const reason = reasonMatch ? reasonMatch[1].trim() : 'Unknown';
             action = `Deopt\nReason: ${reason}`;
             nodeColor = '#FF7B7B'; // Red
         }
-        // 2. Completed Compiling/Optimizing (Extract Time)
-        else if (rawActionDetail.startsWith('completed compiling') || rawActionDetail.startsWith('completed optimizing')) {
-            // Captures the full time string, e.g., "0.024, 0.398, 0.014"
-            const timeMatch = rawActionDetail.match(/took\s([\d\.,\s]+)\sms/);
+        // Completed Compiling/Optimizing (Extract Time)
+        else if (logEntryText.startsWith('completed compiling') || logEntryText.startsWith('completed optimizing')) {
+            const timeMatch = logEntryText.match(/took\s([\d\.,\s]+)\sms/);
             const time = timeMatch ? `\nTime: ${timeMatch[1].trim()} ms` : '';
 
-            if (rawActionDetail.startsWith('completed compiling')) {
+            if (logEntryText.startsWith('completed compiling')) {
                 action = `Compiled${time}`;
             } else {
                 action = `Optimized${time}`;
             }
-            nodeColor = '#7BFF7B'; // Green
+            nodeColor = '#7BFF7B';
         }
-        // 3. Compiling Method (Extract OSR/Target)
-        else if (rawActionDetail.startsWith('compiling method')) {
-            const osr = rawActionDetail.includes('OSR') ? ' (OSR)' : '';
-            const target = rawActionDetail.includes('TURBOFAN') ? ' (TurboFan)' : '';
+        // Compiling Method
+        else if (logEntryText.startsWith('compiling method')) {
+            const osr = logEntryText.includes('OSR') ? ' (OSR)' : '';
+            const target = logEntryText.includes('TURBOFAN') ? ' (TurboFan)' : '';
             action = `Compiling${target}${osr}`;
-            nodeColor = '#8D8DFF'; // Blueish
+            nodeColor = '#2ed6c5ff';
         }
-        // 4. Marking (Extract Reason)
-        else if (rawActionDetail.startsWith('marking')) {
-            // Extracts reason from the cleaned action detail.
-            const reasonMatch = rawActionDetail.match(/reason:\s(.*?)$/);
+        // Marking (Extract Reason)
+        else if (logEntryText.startsWith('marking')) {
+            const reasonMatch = logEntryText.match(/reason:\s(.*?)(?:,|$)/);
             const reason = reasonMatch ? reasonMatch[1].trim() : 'Unknown';
             action = `Marked for Opt\nReason: ${reason}`;
-            nodeColor = '#99D0FF'; // Lighter blue
+            nodeColor = '#2ed6c5ff';
         }
 
         nodes.push({
@@ -123,20 +102,18 @@ function parseV8Log(rawLogText) {
 
         layout.nextX += 250; // Increment X for the next event in this row
 
-        // --- Edge Creation ---
+        // Edge Creation
         const previousEventId = lastEventPerFunction.get(functionName);
         if (!previousEventId) {
-            // First event: connect from function node
             edges.push({ from: functionNodeId, to: eventNodeId, arrows: 'to', color: { color: '#66a3ff' } });
         } else {
-            // Subsequent event: connect from previous event
             edges.push({ from: previousEventId, to: eventNodeId, arrows: 'to', color: { color: '#66a3ff' } });
         }
         lastEventPerFunction.set(functionName, eventNodeId);
 
         // Dashed line for global chronology
         if (lastGlobalNodeId) {
-            edges.push({ from: lastGlobalNodeId, to: eventNodeId, arrows: 'to', dashes: true, color: { color: '#cccccc' } });
+            edges.push({ from: lastGlobalNodeId, to: eventNodeId, arrows: 'to', dashes: true, color: { color: '#8d8d8dff' } });
         }
         lastGlobalNodeId = eventNodeId;
     });
@@ -162,17 +139,9 @@ async function main() {
             nodes: {
                 shape: 'box',
                 shapeProperties: { borderRadius: 4 },
-                widthConstraint: { minimum: 200, maximum: 200 }, // Set fixed width
-                font: { multi: 'html', size: 13, align: 'left' },
+                widthConstraint: { minimum: 150, maximum: 150 }, // Set fixed width
+                font: { multi: 'html', size: 18, align: 'left' },
             },
-            edges: {
-                smooth: {
-                    type: 'cubicBezier',
-                    forceDirection: 'horizontal',
-                    roundness: 0.9
-                }
-            },
-            // IMPORTANT: No layout section, and physics is disabled.
             physics: false,
         };
 
