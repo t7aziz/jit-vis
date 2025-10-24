@@ -133,7 +133,6 @@ async function main() {
         }
 
         const graphData = parseV8Log(rawData);
-
         const container = document.getElementById('graph-container');
         const options = {
             nodes: {

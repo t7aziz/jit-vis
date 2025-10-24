@@ -12,24 +12,69 @@
             margin: 0;
             padding: 1%;
             height: 100%;
+            background-color: #fdfdfd;
+        }
+
+        section {
+            margin-bottom: 2em;
         }
 
         #graph-container {
             width: 100%;
             height: 60vh;
             border: 1px solid lightgray;
+            background-color: #ffffff;
+        }
+
+        .content-container {
+            border: 1px solid #e0e0e0;
+            background: #fafafa;
+            margin-top: 10px;
+        }
+
+        #legend {
+            padding: 10px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        #raw-data-container {
+            padding: 0;
         }
 
         #raw-data {
-            width: 100%;
-            height: 100%;
             margin: 0;
-            padding: 8px;
+            padding: 10px;
+            width: 100%;
+            height: 30vh;
             box-sizing: border-box;
             overflow: auto;
+            border: none;
+            background: transparent;
+            font-size: 14px;
+            line-height: 1.4;
             white-space: pre-wrap;
-            background: #fafafa;
-            border: 1px solid #e0e0e0;
+            word-wrap: break-word;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-line {
+            height: 4px;
+            width: 30px;
+        }
+
+        .solid-blue {
+            background-color: #66a3ff;
+        }
+
+        .dashed-gray {
+            border-top: 3px dashed #8d8d8dff;
         }
     </style>
 </head>
@@ -39,13 +84,26 @@
 
     <section aria-labelledby="graph-heading">
         <h2 id="graph-heading">Optimization Graph</h2>
+        <div id="legend">
+            <div class="legend-item">
+                <div class="legend-line solid-blue"></div>
+                <span>Function-Specific Chronology</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-line dashed-gray"></div>
+                <span>Global Chronology</span>
+            </div>
+        </div>
         <div id="graph-container" role="img" aria-label="V8 optimization graph"></div>
     </section>
 
     <section aria-labelledby="raw-heading">
         <h2 id="raw-heading">Raw V8 Log</h2>
-        <pre id="raw-data">Loading raw log…</pre>
+        <div id="raw-data-container" class="content-container">
+            <pre id="raw-data">Loading raw log…</pre>
+        </div>
     </section>
+
     <script src="app.js"></script>
 </body>
 
