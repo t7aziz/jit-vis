@@ -1,6 +1,6 @@
 # jit-vis
 
-A small package to visualize V8 JIT/TurboFan optimization events from V8 log output
+A small module and browser tool to visualize V8 JIT/TurboFan optimization events from V8 log output
 
 Quick start
 1. Install dependencies:
@@ -9,14 +9,15 @@ Quick start
 	- vis-jit replaceWithYourFile.js
 
 What it does
-- Redirects V8 log output to json file and fetches to frontend
-- Parses events and displays an optimization graph using vis-network as well as the raw data
+- Redirects V8 log output to log file and fetches to frontend
+- Parses events in real-time and displays an optimization graph using vis-network as well as the raw data
 
-Notes for developers
+Notes:
 - The frontend is in `public/` (edit `public/app.js` and `public/index.html`)
 - Server entrypoint: `server.js` (serves `public/` and exposes `/api/data`)
 - The parser lives in `public/app.js` (function `parseV8Log`)
 - The command line program is in `cli.js`
+- Should be platform-independent
 
 Contributions
 - PRs welcome. Keep changes small and include a brief test or manual verification steps.

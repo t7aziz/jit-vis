@@ -133,10 +133,6 @@ async function updateGraph() {
             rawPre.textContent = rawData;
         }
 
-        if (network) {
-            network.destroy();
-        }
-
         let graphData = parseV8Log(rawData);
 
         const container = document.getElementById('graph-container');

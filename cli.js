@@ -1,10 +1,8 @@
 #!/usr/bin/env node
-
 const { Command } = require('commander');
 const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
-
 const program = new Command();
 
 program
@@ -12,30 +10,67 @@ program
     .description('A tool to visualize V8 JIT optimizations for a given file in real-time.')
     .argument('<file>', 'The JavaScript file to profile.')
     .action((file) => {
-        const logFile = 'realtime-turbo.log';
-        const logFilePath = path.join(process.cwd(), logFile);
+        const logFilePath = path.join(process.cwd(), 'realtime-turbo.log');
 
-        // Create a writable stream to our log file in append mode
-        const logStream = fs.createWriteStream(logFilePath, { flags: 'a' });
+        // Clear the log file
+        if (fs.existsSync(logFilePath)) {
+            fs.unlinkSync(logFilePath);
+        }
 
-        console.log(`Spawning "${file}" and capturing logs to "${logFile}"...`);
+        console.log(`Running "${file}" and capturing logs to "${logFilePath}"...`);
 
-        // Spawn the user's script with tracing
-        const child = spawn('node', ['--trace-opt', '--trace-deopt', file]);
-
-        // Pipe the child's standard output directly to our log file
-        child.stdout.pipe(logStream);
-        child.stderr.on('data', (data) => {
-            console.error(`[${file} stderr]: ${data}`);
+        // Use --redirect-code-traces-to to force V8 to write directly to file
+        const child = spawn('node', [
+            '--trace-opt',
+            '--trace-deopt',
+            '--redirect-code-traces',
+            `--redirect-code-traces-to=${logFilePath}`,
+            file
+        ], {
+            stdio: 'inherit'
         });
 
-        child.on('close', (code) => {
-            console.log(`Target script exited with code ${code}`);
+        // Monitor the file for changes in real-time
+        let lastSize = 0;
+        let lastPosition = 0;
+
+        const tailInterval = setInterval(() => {
+            if (!fs.existsSync(logFilePath)) return;
+
+            const stats = fs.statSync(logFilePath);
+            if (stats.size > lastSize) {
+                // Read only the new data
+                const stream = fs.createReadStream(logFilePath, {
+                    start: lastPosition,
+                    end: stats.size
+                });
+
+                let newData = '';
+                stream.on('data', (chunk) => {
+                    newData += chunk.toString();
+                });
+
+                stream.on('end', () => {
+                    if (newData.trim()) {
+                        console.log('[V8 Log] New optimization events:');
+                        console.log(newData);
+                    }
+                    lastPosition = stats.size;
+                    lastSize = stats.size;
+                });
+            }
+        }, 100); // Check every 100ms
+
+        child.on('exit', (code) => {
+            clearInterval(tailInterval);
+            console.log(`\nChild process exited with code ${code}`);
+            if (fs.existsSync(logFilePath)) {
+                const stats = fs.statSync(logFilePath);
+                console.log(`Logs completed, written to ${logFilePath} (${stats.size} bytes)`);
+            }
         });
 
         console.log('Starting local visualization server...');
-
-        // Spawn the server, passing the log file path via an environment variable
         const serverPath = path.join(__dirname, 'server.js');
         spawn('node', [serverPath], {
             stdio: 'inherit',
