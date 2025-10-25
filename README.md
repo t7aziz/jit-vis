@@ -5,7 +5,7 @@ A small module and browser tool to visualize V8 JIT/TurboFan optimization events
 Quick start
 1. Install dependencies:
 	- npm install
-2. Running
+2. Running (use the tests in tests/ for examples)
 	- vis-jit replaceWithYourFile.js
 
 What it does
