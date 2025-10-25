@@ -66,7 +66,7 @@ program
             console.log(`\nChild process exited with code ${code}`);
             if (fs.existsSync(logFilePath)) {
                 const stats = fs.statSync(logFilePath);
-                console.log(`Logs completed, written to ${logFilePath} (${stats.size} bytes)`);
+                console.log(`Log file ${logFilePath} (${stats.size} bytes) is complete`);
             }
         });
 
