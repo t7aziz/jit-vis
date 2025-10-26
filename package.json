@@ -1,17 +1,35 @@
 {
   "name": "vis-jit",
   "version": "1.0.0",
-  "description": "A custom tool to visualize V8 JIT optimizations for NodeJS",
+  "description": "A custom tool to visualize real-time V8 JIT optimizations for NodeJS",
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "v8",
+    "jit",
+    "optimization",
+    "profiling",
+    "node",
+    "visualization"
+  ],
+  "author": "Taha Aziz github.com/t7aziz",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/t7aziz/vis-jit.git"
+  },
+  "license": "MIT",
   "bin": {
     "vis-jit": "./cli.js"
+  },
+  "bugs": {
+    "url": "https://github.com/t7aziz/vis-jit/issues"
+  },
+  "homepage": "https://github.com/t7aziz/vis-jit#readme",
+  "engines": {
+    "node": ">=14.0.0"
   },
   "dependencies": {
     "commander": "^14.0.1",

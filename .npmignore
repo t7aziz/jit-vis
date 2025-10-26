@@ -1,0 +1,14 @@
+# Node modules
+node_modules/
+
+# Logs
+logs/
+*.log
+realtime-turbo.log
+
+#tests
+tests/
+
+.gitignore
+.env
+.DS_Store
