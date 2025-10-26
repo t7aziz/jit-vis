@@ -4,9 +4,13 @@ A small module and browser tool to visualize V8 JIT/TurboFan optimization events
 
 Quick start
 1. Install dependencies:
-	- npm install
-2. Running (use the tests in tests/ for examples)
-	- vis-jit replaceWithYourFile.js
+```bash
+npm install
+```
+2. Running (use the tests in tests/ for examples):
+```bash
+vis-jit replaceWithYourFile.js
+```
 
 What it does
 - Redirects V8 log output to log file and fetches to frontend
