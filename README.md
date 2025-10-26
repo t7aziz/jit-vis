@@ -6,7 +6,10 @@ A small module and browser tool to visualize real-time V8 JIT/TurboFan optimizat
 ## Installation
 ```bash
 npm install vis-jit
+# Usage: vis-jit your_script.js
+# Options: -p, --port <number> (default is 3000)
 ```
+
 ## Features
 What it does
 - Redirects curated V8 log output to log file and fetches to frontend
