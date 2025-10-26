@@ -8,9 +8,11 @@ const program = new Command();
 program
     .version('1.0.0')
     .description('A tool to visualize V8 JIT optimizations for a given file in real-time.')
+    .option('-p, --port <number>', 'Port for the visualization server', '3000')
     .argument('<file>', 'The JavaScript file to profile.')
-    .action((file) => {
+    .action((file, options) => {
         const logFilePath = path.join(process.cwd(), 'realtime-turbo.log');
+        const port = options.port;
 
         // Clear the log file
         if (fs.existsSync(logFilePath)) {
@@ -74,7 +76,7 @@ program
         const serverPath = path.join(__dirname, 'server.js');
         spawn('node', [serverPath], {
             stdio: 'inherit',
-            env: { ...process.env, LOG_FILE_PATH: logFilePath }
+            env: { ...process.env, LOG_FILE_PATH: logFilePath, PORT: port }
         });
     });
 

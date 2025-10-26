@@ -3,9 +3,9 @@ const path = require('path');
 const fs = require('fs');
 
 const app = express();
-const PORT = 3000;
 
-// Read the log file path from the environment variable set by cli.js.
+// Inherit values from cli.js
+const PORT = process.env.PORT || 3000;
 const LOG_FILE_PATH = process.env.LOG_FILE_PATH || path.join(process.cwd(), 'realtime-turbo.log');
 
 console.log(`[Server] Monitoring log file: ${LOG_FILE_PATH}`);
@@ -27,6 +27,14 @@ app.get('/api/data', (req, res) => {
     });
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
     console.log(`Application running at http://localhost:${PORT}`);
+});
+
+server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+        console.error(`\nError: Port ${PORT} is already in use. Try freeing the port or changing ports by running: vis-jit -p NEW_PORT <file>\n`);
+        process.exit(1);
+    }
+    throw err;
 });
