@@ -1,5 +1,6 @@
 # vis-jit
 [![npm version](https://badge.fury.io/js/vis-jit.svg)](https://www.npmjs.com/package/vis-jit)
+
 A small module and browser tool to visualize real-time V8 JIT/TurboFan optimization events from V8 log output
 
 ## Installation
